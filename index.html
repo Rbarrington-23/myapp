@@ -1,116 +1,145 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-
 <meta charset="UTF-8">
-<title>My App | Login</title>
+<title>My Notes App</title>
 
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
 
 <style>
 
 body{
-background: linear-gradient(135deg,#4e73df,#224abe);
 height:100vh;
 display:flex;
 align-items:center;
 justify-content:center;
+background:linear-gradient(135deg,#4e73df,#224abe);
 font-family:Arial;
 }
 
 .card{
-width:420px;
-border:none;
-border-radius:12px;
-box-shadow:0 10px 30px rgba(0,0,0,0.2);
+width:400px;
+border-radius:15px;
 }
 
-.card-header{
-background:white;
-border-bottom:none;
-text-align:center;
-font-weight:bold;
-font-size:22px;
-}
-
-.form-control{
-margin-bottom:15px;
-}
-
-.btn-primary{
-width:100%;
+.hidden{
+display:none;
 }
 
 </style>
-
 </head>
 
 <body>
 
-<div class="card">
+<div class="card p-4">
 
-<div class="card-header">
-My App
-</div>
+<h3 class="text-center mb-3">Register</h3>
 
-<div class="card-body">
+<input id="regUser" class="form-control mb-2" placeholder="Username">
+<input id="regPass" type="password" class="form-control mb-3" placeholder="Password">
 
-<h5 class="text-center mb-3">Create Account</h5>
-
-<form>
-
-<input 
-type="text" 
-name="username" 
-class="form-control"
-placeholder="Username"
-required>
-
-<input 
-type="password" 
-name="password"
-class="form-control"
-placeholder="Password"
-required>
-
-<button class="btn btn-success">
-Register
-</button>
-
-</form>
+<button class="btn btn-primary w-100 mb-3" onclick="register()">Register</button>
 
 <hr>
 
-<h5 class="text-center mb-3">Login</h5>
+<h3 class="text-center mb-3">Login</h3>
 
-<form>
+<input id="logUser" class="form-control mb-2" placeholder="Username">
+<input id="logPass" type="password" class="form-control mb-3" placeholder="Password">
 
-<input 
-type="text"
-name="username"
-class="form-control"
-placeholder="Username"
-required>
-
-<input 
-type="password"
-name="password"
-class="form-control"
-placeholder="Password"
-required>
-
-<button class="btn btn-primary">
-Login
-</button>
-
-</form>
+<button class="btn btn-success w-100" onclick="login()">Login</button>
 
 </div>
 
+
+<div id="notesPage" class="card p-4 hidden">
+
+<h3 class="text-center">My Notes</h3>
+
+<textarea id="noteInput" class="form-control mb-3" placeholder="Write a note..."></textarea>
+
+<button class="btn btn-primary w-100 mb-3" onclick="addNote()">Add Note</button>
+
+<ul id="notesList" class="list-group"></ul>
+
+<button class="btn btn-danger mt-3" onclick="logout()">Logout</button>
+
 </div>
 
-</body>
-</html>
-<h1>My Notes</h1>
-</body>
-</html>
+
+<script>
+
+let users = JSON.parse(localStorage.getItem("users")) || {}
+
+function register(){
+
+let username = document.getElementById("regUser").value
+let password = document.getElementById("regPass").value
+
+if(!username || !password){
+alert("Please fill in fields")
+return
+}
+
+users[username] = password
+localStorage.setItem("users", JSON.stringify(users))
+
+alert("Registered successfully!")
+
+}
+
+function login(){
+
+let username = document.getElementById("logUser").value
+let password = document.getElementById("logPass").value
+
+if(users[username] === password){
+
+document.querySelector(".card").classList.add("hidden")
+document.getElementById("notesPage").classList.remove("hidden")
+
+loadNotes()
+
+}else{
+
+alert("Invalid login")
+
+}
+
+}
+
+function addNote(){
+
+let note = document.getElementById("noteInput").value
+let notes = JSON.parse(localStorage.getItem("notes")) || []
+
+notes.push(note)
+
+localStorage.setItem("notes", JSON.stringify(notes))
+
+document.getElementById("noteInput").value=""
+
+loadNotes()
+
+}
+
+function loadNotes(){
+
+let notes = JSON.parse(localStorage.getItem("notes")) || []
+let list = document.getElementById("notesList")
+
+list.innerHTML=""
+
+notes.forEach(n => {
+
+let li = document.createElement("li")
+
+li.className="list-group-item"
+
+li.innerText=n
+
+list.appendChild(li)
+
+})
+
+}
