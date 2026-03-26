@@ -1,17 +1,87 @@
 const express = require("express")
+const sqlite3 = require("sqlite3").verbose()
 const path = require("path")
 
 const app = express()
-
 app.use(express.json())
 app.use(express.urlencoded({ extended: true }))
 
-app.use(express.static(path.join(__dirname, "public")))
+app.use(express.static("public"))
 
-app.get("/", (req, res) => {
-    res.sendFile(path.join(__dirname, "public", "index.html"))
+const db = new sqlite3.Database("./database.db")
+
+db.serialize(() => {
+
+db.run(`CREATE TABLE IF NOT EXISTS users (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+username TEXT,
+password TEXT
+)`)
+
+db.run(`CREATE TABLE IF NOT EXISTS notes (
+id INTEGER PRIMARY KEY AUTOINCREMENT,
+username TEXT,
+note TEXT
+)`)
+
 })
 
-app.listen(5000, () => {
-    console.log("Server running on http://localhost:5000")
+app.post("/register", (req,res)=>{
+
+const {username,password} = req.body
+
+db.run("INSERT INTO users (username,password) VALUES (?,?)",
+[username,password])
+
+res.send("Registered")
+
+})
+
+app.post("/login",(req,res)=>{
+
+const {username,password} = req.body
+
+db.get(
+"SELECT * FROM users WHERE username=? AND password=?",
+[username,password],
+(err,row)=>{
+
+if(row){
+res.json({success:true})
+}else{
+res.json({success:false})
+}
+
+})
+
+})
+
+app.post("/addNote",(req,res)=>{
+
+const {username,note} = req.body
+
+db.run(
+"INSERT INTO notes (username,note) VALUES (?,?)",
+[username,note]
+)
+
+res.send("Note saved")
+
+})
+
+app.get("/notes/:username",(req,res)=>{
+
+db.all(
+"SELECT * FROM notes WHERE username=?",
+[req.params.username],
+(err,rows)=>{
+
+res.json(rows)
+
+})
+
+})
+
+app.listen(5000,()=>{
+console.log("Server running on http://localhost:5000")
 })
