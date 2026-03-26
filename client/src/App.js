@@ -1,137 +1,158 @@
-import React, { useState, useEffect } from "react";
-import "./App.css";
+import React,{useState,useEffect} from "react"
+import axios from "axios"
+import "./App.css"
 
-function App() {
+function App(){
 
-const [notes,setNotes]=useState(()=>{
-const saved=localStorage.getItem("notes")
-return saved?JSON.parse(saved):[]
-})
+const[username,setUsername]=useState("")
+const[password,setPassword]=useState("")
+const[user,setUser]=useState(null)
 
-const [text,setText]=useState("")
-const [search,setSearch]=useState("")
-const [darkMode,setDarkMode]=useState(false)
-const [editingId,setEditingId]=useState(null)
+const[note,setNote]=useState("")
+const[notes,setNotes]=useState([])
+const[search,setSearch]=useState("")
+const[dark,setDark]=useState(false)
 
-useEffect(()=>{
-localStorage.setItem("notes",JSON.stringify(notes))
-},[notes])
+const register=()=>{
 
-const addNote=()=>{
-if(text.trim()==="") return
+axios.post("http://localhost:5000/register",{
+username,
+password
+}).then(()=>alert("Registered"))
 
-const newNote={
-id:Date.now(),
-text:text,
-date:new Date().toLocaleString(),
-color:getRandomColor()
 }
 
-setNotes([...notes,newNote])
-setText("")
+const login=()=>{
+
+axios.post("http://localhost:5000/login",{
+username,
+password
+}).then(res=>{
+
+if(res.data.success){
+setUser(username)
+loadNotes(username)
+}else{
+alert("Invalid login")
+}
+
+})
+
+}
+
+const loadNotes=(u)=>{
+
+axios.get(`http://localhost:5000/notes/${u}`)
+.then(res=>setNotes(res.data))
+
+}
+
+const addNote=()=>{
+
+axios.post("http://localhost:5000/addNote",{
+username:user,
+text:note
+}).then(()=>{
+setNote("")
+loadNotes(user)
+})
+
 }
 
 const deleteNote=(id)=>{
-setNotes(notes.filter(note=>note.id!==id))
+
+axios.delete(`http://localhost:5000/deleteNote/${id}`)
+.then(()=>loadNotes(user))
+
 }
 
-const startEdit=(id,text)=>{
-setEditingId(id)
-setText(text)
+const updateNote=(id,text)=>{
+
+const newText=prompt("Edit note",text)
+
+axios.put("http://localhost:5000/updateNote",{
+id,
+text:newText
+}).then(()=>loadNotes(user))
+
 }
 
-const saveEdit=()=>{
-setNotes(notes.map(note=>{
-if(note.id===editingId){
-return {...note,text:text}
-}
-return note
-}))
-setEditingId(null)
-setText("")
-}
-
-const getRandomColor=()=>{
-const colors=[
-"#fff176",
-"#aed581",
-"#81d4fa",
-"#ffab91",
-"#ce93d8"
-]
-return colors[Math.floor(Math.random()*colors.length)]
-}
-
-const filteredNotes=notes.filter(note=>
-note.text.toLowerCase().includes(search.toLowerCase())
+const filteredNotes=notes.filter(n=>
+n.text.toLowerCase().includes(search.toLowerCase())
 )
+
+if(!user){
 
 return(
 
-<div className={darkMode?"dark app":"app"}>
+<div className="login">
+
+<h2>Login</h2>
+
+<input placeholder="Username"
+onChange={e=>setUsername(e.target.value)} />
+
+<input placeholder="Password"
+type="password"
+onChange={e=>setPassword(e.target.value)} />
+
+<button onClick={login}>Login</button>
+<button onClick={register}>Register</button>
+
+</div>
+
+)
+
+}
+
+return(
+
+<div className={dark?"dark":"app"}>
 
 <h1>My Notes App</h1>
 
-<button onClick={()=>setDarkMode(!darkMode)}>
+<button onClick={()=>setDark(!dark)}>
 Toggle Dark Mode
 </button>
 
-<br/><br/>
-
 <input
 placeholder="Search notes"
-value={search}
-onChange={(e)=>setSearch(e.target.value)}
-className="search"
+onChange={e=>setSearch(e.target.value)}
 />
 
-<br/><br/>
+<div className="add">
 
 <input
 placeholder="Write a note..."
-value={text}
-onChange={(e)=>setText(e.target.value)}
-className="note-input"
+value={note}
+onChange={e=>setNote(e.target.value)}
 />
 
-<button
-onClick={editingId?saveEdit:addNote}
-className="add-btn"
->
-{editingId?"Save Edit":"Add Note"}
-</button>
+<button onClick={addNote}>Add Note</button>
 
-<div className="notes-container">
+</div>
 
-{filteredNotes.map(note=>(
+<div className="notes">
 
-<div
-key={note.id}
-className="note-card"
-style={{background:note.color}}
->
+{filteredNotes.map(n=>(
 
-<p>{note.text}</p>
+<div key={n.id} className="card">
 
-<small>{note.date}</small>
-
-<div className="note-buttons">
+<p>{n.text}</p>
 
 <button
-onClick={()=>startEdit(note.id,note.text)}
-className="edit-btn"
+className="edit"
+onClick={()=>updateNote(n.id,n.text)}
 >
 Edit
 </button>
 
 <button
-onClick={()=>deleteNote(note.id)}
-className="delete-btn"
+className="delete"
+onClick={()=>deleteNote(n.id)}
 >
 Delete
 </button>
-
-</div>
 
 </div>
 
@@ -142,6 +163,7 @@ Delete
 </div>
 
 )
+
 }
 
 export default App
