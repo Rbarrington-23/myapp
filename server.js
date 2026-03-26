@@ -1,61 +1,17 @@
-const express = require("express");
-const cors = require("cors");
-const sqlite3 = require("sqlite3").verbose();
+const express = require("express")
+const path = require("path")
 
-const app = express();
-app.use(cors());
-app.use(express.json());
+const app = express()
 
-const db = new sqlite3.Database("./notes.db");
+app.use(express.json())
+app.use(express.urlencoded({ extended: true }))
 
-// Create table if it doesn't exist
-db.run(`
-  CREATE TABLE IF NOT EXISTS notes (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    text TEXT
-  )
-`);
+app.use(express.static(path.join(__dirname, "public")))
 
-// GET notes
-app.get("/api/notes", (req, res) => {
-  db.all("SELECT * FROM notes", [], (err, rows) => {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-    res.json(rows);
-  });
-});
+app.get("/", (req, res) => {
+    res.sendFile(path.join(__dirname, "public", "index.html"))
+})
 
-// ADD note
-app.post("/api/notes", (req, res) => {
-  const { text } = req.body;
-
-  db.run("INSERT INTO notes(text) VALUES(?)", [text], function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-
-    res.json({
-      id: this.lastID,
-      text
-    });
-  });
-});
-
-// DELETE note
-app.delete("/api/notes/:id", (req, res) => {
-  db.run("DELETE FROM notes WHERE id = ?", req.params.id, function (err) {
-    if (err) {
-      res.status(500).json({ error: err.message });
-      return;
-    }
-
-    res.json({ message: "Note deleted" });
-  });
-});
-
-app.listen(3001, () => {
-  console.log("Server running on port 3001");
-});
+app.listen(5000, () => {
+    console.log("Server running on http://localhost:5000")
+})
